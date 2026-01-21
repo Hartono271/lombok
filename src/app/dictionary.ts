@@ -1,0 +1,40 @@
+export const dictionary = {
+    id: {
+      welcome: "🏝️ Selamat Datang di Lombok Paradise",
+      subtitle: "Temukan keindahan surga tersembunyi dengan Teknologi Web Semantik.",
+      why: "🌴 Kenapa Lombok?",
+      reasons: ["Pantai-pantai yang masih alami dengan air sebening kristal", "Gunung Rinjani - gunung berapi tertinggi kedua di Indonesia", "Budaya & tradisi Sasak yang otentik", "Tempat berselancar & menyelam kelas dunia", "Surga Kepulauan Gili yang indah", "Desa-desa tradisional Sasak", "Air terjun & hutan eksotis", "Masakan lokal yang lezat"],
+      startBtn: "Mulai Jelajah",
+      personalize: "Personalisasi Perjalanan",
+      entername: "Masukkan nama Anda untuk memulai pengalaman wisata.",
+      nameLabel: "Nama Anda:",
+      backWelcome: "Kembali",
+      continue: "Lanjut",
+      explore: "Jelajahi Wisata",
+      searchPlace: "Cari wisata... (contoh: 'liburan' atau 'murah')",
+      locLabel: "Lokasi:",
+      transLabel: "Transportasi:",
+      changeName: "Ganti Nama",
+      noResult: "Tidak ada wisata yang ditemukan.",
+      loading: "Memuat data wisata..."
+    },
+    en: {
+      welcome: "🏝️ Welcome to Lombok Paradise",
+      subtitle: "Discover the hidden gem of Indonesia! Lombok offers breathtaking beaches.",
+      why: "🌴 Why Visit Lombok?",
+      reasons: ["Pristine beaches with crystal clear waters", "Mount Rinjani - Indonesia's second highest volcano", "Authentic Sasak culture & traditions", "World-class surfing & diving spots", "Beautiful Gili Islands paradise", "Traditional Sasak villages", "Exotic waterfalls & jungles", "Delicious local cuisine"],
+      startBtn: "Start Exploring",
+      personalize: "Personalize Journey",
+      entername: "Enter your name to customize your experience.",
+      nameLabel: "Your Name:",
+      backWelcome: "Back",
+      continue: "Continue",
+      explore: "Explore Destinations",
+      searchPlace: "Search places... (try typing 'holiday' or 'budget')",
+      locLabel: "Location:",
+      transLabel: "Transportation:",
+      changeName: "Change Name",
+      noResult: "No destinations found.",
+      loading: "Loading destinations..."
+    }
+};
