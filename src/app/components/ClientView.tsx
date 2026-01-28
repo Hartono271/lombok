@@ -10,16 +10,11 @@ const dictionary: any = {
     why: "🌴 Kenapa Lombok?",
     reasons: ["Pantai-pantai yang masih alami dengan air sebening kristal", "Gunung Rinjani - gunung berapi tertinggi kedua di Indonesia", "Budaya & tradisi Sasak yang otentik", "Tempat berselancar & menyelam kelas dunia", "Surga Kepulauan Gili yang indah", "Desa-desa tradisional Sasak", "Air terjun & hutan eksotis", "Masakan lokal yang lezat"],
     startBtn: "Mulai Jelajah",
-    personalize: "👤 Personalisasi Perjalanan",
-    entername: "Masukkan nama Anda untuk memulai pengalaman wisata.",
-    nameLabel: "Nama Anda:",
     backWelcome: "Kembali",
-    continue: "Lanjut",
-    explore: "🔎 Jelajahi Wisata",
+    explore: "Jelajahi Wisata",
     searchPlace: "Cari wisata... (contoh: 'liburan' atau 'murah')",
     locLabel: "Lokasi:",
     transLabel: "Transportasi:",
-    changeName: "Ganti Nama",
     noResult: "Tidak ada wisata yang ditemukan.",
     allLoc: "Semua Lokasi",
     centralLombok: "Lombok Tengah",
@@ -43,7 +38,6 @@ const dictionary: any = {
     modalActivities: "Aktivitas",
     modalDesc: "Deskripsi",
     modalFacilities: "Fasilitas",
-    access: "Akses",
     noDesc: "Tidak ada deskripsi tersedia.",
     noActivity: "Berbagai aktivitas tersedia.",
     noFacility: "Fasilitas dasar tersedia.",
@@ -56,16 +50,11 @@ const dictionary: any = {
     why: "🌴 Why Visit Lombok?",
     reasons: ["Pristine beaches with crystal clear waters", "Mount Rinjani - Indonesia's second highest volcano", "Authentic Sasak culture & traditions", "World-class surfing & diving spots", "Beautiful Gili Islands paradise", "Traditional Sasak villages", "Exotic waterfalls & jungles", "Delicious local cuisine"],
     startBtn: "Start Exploring",
-    personalize: "👤 Personalize Journey",
-    entername: "Enter your name to customize your experience.",
-    nameLabel: "Your Name:",
     backWelcome: "Back",
-    continue: "Continue",
-    explore: "🔎 Explore Destinations",
+    explore: "Explore Destinations",
     searchPlace: "Search places... (try typing 'holiday' or 'budget')",
     locLabel: "Location:",
     transLabel: "Transportation:",
-    changeName: "Change Name",
     noResult: "No destinations found.",
     allLoc: "All Locations",
     centralLombok: "Central Lombok",
@@ -89,7 +78,6 @@ const dictionary: any = {
     modalActivities: "Activities",
     modalDesc: "Description",
     modalFacilities: "Facilities",
-    access: "Access",
     noDesc: "No description available.",
     noActivity: "Various activities available.",
     noFacility: "Basic facilities available.",
@@ -111,10 +99,23 @@ const swrlRules: any = {
   food: { keywords: ['makanan', 'food', 'kuliner', 'culinary', 'makan', 'eat', 'restaurant', 'kopi'], types: ['Culinary'], badge: '🍜 Culinary Tour', badgeId: '🍜 Wisata Kuliner' }
 };
 
+// Terjemahan untuk nama transportasi
+const transportTranslations: any = {
+  'Car': { id: 'Mobil', en: 'Car' },
+  'Motorcycle': { id: 'Motor', en: 'Motorcycle' },
+  'Bus': { id: 'Bus', en: 'Bus' },
+  'Taxi': { id: 'Taksi', en: 'Taxi' },
+  'Boat': { id: 'Perahu', en: 'Boat' },
+  'Ferry': { id: 'Kapal Feri', en: 'Ferry' },
+  'Speedboat': { id: 'Speedboat', en: 'Speedboat' },
+  'Plane': { id: 'Pesawat', en: 'Plane' },
+  'PublicTransport': { id: 'Angkutan Umum', en: 'Public Transport' },
+  'PrivateVehicle': { id: 'Kendaraan Pribadi', en: 'Private Vehicle' }
+};
+
 export default function ClientView({ initialData }: { initialData: any[] }) {
   const [lang, setLang] = useState<'id' | 'en'>('id');
-  const [screen, setScreen] = useState<'welcome' | 'name' | 'search'>('welcome');
-  const [name, setName] = useState('');
+  const [screen, setScreen] = useState<'welcome' | 'search'>('welcome');
   const [keyword, setKeyword] = useState('');
   const [locFilter, setLocFilter] = useState('all');
   const [transFilter, setTransFilter] = useState('all');
@@ -123,6 +124,7 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
   
   // Carousel State
   const [currentSlide, setCurrentSlide] = useState(0);
+  const totalSlides = 5;
 
   // Particles
   useEffect(() => {
@@ -145,18 +147,54 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
     }
   }, []);
 
-  // Carousel Logic
+  // Carousel Auto-slide Logic
   useEffect(() => {
     if (screen === 'welcome') {
         const interval = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % 10);
+            setCurrentSlide((prev) => (prev + 1) % totalSlides);
         }, 3000);
         return () => clearInterval(interval);
     }
   }, [screen]);
 
+  // ESC key to close modal
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setModalItem(null);
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, []);
+
   // Translation Helper
   const t = dictionary[lang];
+
+  // Fungsi untuk menerjemahkan nama transportasi
+  const translateTransport = (transport: string) => {
+    if (!transport) return lang === 'id' ? 'Kendaraan Pribadi' : 'Private Vehicle';
+    let translated = transport;
+    Object.keys(transportTranslations).forEach(key => {
+      const regex = new RegExp(key, 'gi');
+      translated = translated.replace(regex, transportTranslations[key][lang]);
+    });
+    return translated;
+  };
+
+  // Helper to get language-specific data from item
+  const getItemData = (item: any) => ({
+    name: item.name,
+    typeURI: item.typeURI,
+    typeLabel: lang === 'id' ? item.typeLabelId : item.typeLabelEn,
+    desc: lang === 'id' ? item.descId : item.descEn,
+    activity: lang === 'id' ? item.activityId : item.activityEn,
+    facility: lang === 'id' ? item.facilityId : item.facilityEn,
+    price: lang === 'id' ? item.priceId : item.priceEn,
+    openingHours: lang === 'id' ? item.openingHoursId : item.openingHoursEn,
+    location: lang === 'id' ? item.locationId : item.locationEn,
+    img: item.img,
+    rating: item.rating,
+    transport: item.transport
+  });
 
   // Filtering Logic
   const filteredData = useMemo(() => {
@@ -174,13 +212,15 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
     results.activeRules = activeRules;
 
     results.data = initialData.filter(item => {
+        const itemData = getItemData(item);
+        
         let passCategory = (activeCategory === 'all') ? true : item.typeURI.includes(activeCategory);
-        let passLocation = (locFilter === 'all') ? true : item.location.includes(locFilter);
+        let passLocation = (locFilter === 'all') ? true : itemData.location.includes(locFilter);
         let passTransport = (transFilter === 'all') ? true : item.transport.toLowerCase().includes(transFilter.toLowerCase());
 
         let passKeyword = true;
         if (!isSmartSearchActive && keyword !== "") {
-            passKeyword = item.name.toLowerCase().includes(lowerKeyword) || item.desc.toLowerCase().includes(lowerKeyword);
+            passKeyword = item.name.toLowerCase().includes(lowerKeyword) || itemData.desc.toLowerCase().includes(lowerKeyword);
         }
 
         let passSmartRule = true;
@@ -192,8 +232,8 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
                     break;
                 }
                 if (rule.priceFilter) {
-                    let priceVal = parseInt(item.price.replace(/[^0-9]/g, '')) || 0;
-                    if (item.price.toLowerCase().includes('free') || item.price.toLowerCase().includes('gratis') || priceVal < 50000 || item.price === '') {
+                    let priceVal = parseInt(itemData.price.replace(/[^0-9]/g, '')) || 0;
+                    if (itemData.price.toLowerCase().includes('free') || itemData.price.toLowerCase().includes('gratis') || priceVal < 50000 || itemData.price === '') {
                         passSmartRule = true;
                         break;
                     }
@@ -204,17 +244,36 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
     });
 
     return results;
-  }, [initialData, keyword, locFilter, transFilter, activeCategory]);
+  }, [initialData, keyword, locFilter, transFilter, activeCategory, lang]);
 
   const formatPrice = (price: string) => {
-      if (!price || price === '') return t.free;
-      const priceNum = parseInt(price.replace(/[^0-9]/g, ''));
-      if (priceNum) {
-          return 'Rp ' + priceNum.toLocaleString('id-ID');
-      } else if (price.toLowerCase().includes('free') || price === '0') {
-          return t.free;
-      }
+    if (!price || price === '') return t.free;
+    
+    // Jika mengandung kata-kata deskriptif atau format kompleks, tampilkan apa adanya
+    if (price.includes(' - ') || price.includes('–') || price.includes('/') || 
+        price.includes('weekday') || price.includes('weekend') || 
+        price.includes('domestic') || price.includes('foreign') ||
+        price.includes('wisatawan') || price.includes('tiket') ||
+        price.includes('sewa') || price.includes('rental') ||
+        price.length > 50) {
       return price;
+    }
+    
+    // Jika harga dalam format angka sederhana seperti "10.000" atau "25000"
+    const priceMatch = price.match(/^[\d.,]+$/);
+    if (priceMatch) {
+      const priceStr = price.replace(/\./g, '').replace(/,/g, '');
+      const priceNum = parseInt(priceStr);
+      if (priceNum && priceNum < 10000000) { // Hanya format jika < 10 juta
+        return 'Rp ' + priceNum.toLocaleString('id-ID');
+      }
+    }
+    
+    if (price.toLowerCase().includes('free') || price === '0' || price.toLowerCase().includes('gratis')) {
+      return t.free;
+    }
+    
+    return price;
   };
 
   const renderStars = (rating: string) => {
@@ -227,6 +286,12 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
           );
       }
       return <>{stars}</>;
+  };
+
+  const handleEnter = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      // Trigger filter (already reactive via useMemo)
+    }
   };
 
   return (
@@ -245,18 +310,18 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
                 <h1 dangerouslySetInnerHTML={{ __html: t.welcome.replace("Lombok Paradise", "<span class='highlight'>Lombok Paradise</span>") }}></h1>
                 <p>{t.subtitle}</p>
 
-                {/* React Carousel Replacement */}
+                {/* React Carousel */}
                 <div className="carousel-container" style={{ width: '100%', maxWidth: '800px', aspectRatio: '16/9', margin: '20px 0', borderRadius: '15px', overflow: 'hidden', position: 'relative', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
                     
                     {/* Previous Button */}
                     <button 
-                        onClick={() => setCurrentSlide((prev) => (prev - 1 + 5) % 5)} 
+                        onClick={() => setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides)} 
                         style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', zIndex: 2, background: 'rgba(0,0,0,0.3)', border: 'none', color: 'white', width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', fontSize: '1.2rem', backdropFilter: 'blur(4px)' }}>
                         <i className="fas fa-chevron-left"></i>
                     </button>
 
-                    <div className="carousel-track" style={{ display: 'flex', height: '100%', transition: 'transform 0.5s ease-in-out', transform: `translateX(-${currentSlide % 5 * 100}%)` }}>
-                        {Array.from({ length: 5 }).map((_, i) => {
+                    <div className="carousel-track" style={{ display: 'flex', height: '100%', transition: 'transform 0.5s ease-in-out', transform: `translateX(-${currentSlide * 100}%)` }}>
+                        {Array.from({ length: totalSlides }).map((_, i) => {
                             const num = (i + 1).toString().padStart(2, '0');
                             return (
                                 <img key={i} src={`/${num}.png`} alt={`Lombok View ${num}`} style={{ width: '100%', height: '100%', objectFit: 'cover', flexShrink: 0 }} 
@@ -267,17 +332,18 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
 
                     {/* Next Button */}
                     <button 
-                        onClick={() => setCurrentSlide((prev) => (prev + 1) % 5)} 
+                        onClick={() => setCurrentSlide((prev) => (prev + 1) % totalSlides)} 
                         style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', zIndex: 2, background: 'rgba(0,0,0,0.3)', border: 'none', color: 'white', width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', fontSize: '1.2rem', backdropFilter: 'blur(4px)' }}>
                         <i className="fas fa-chevron-right"></i>
                     </button>
 
+                    {/* Dots */}
                     <div style={{ position: 'absolute', bottom: '10px', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '8px', zIndex: 2 }}>
-                        {Array.from({ length: 5 }).map((_, i) => (
+                        {Array.from({ length: totalSlides }).map((_, i) => (
                              <div key={i} className="carousel-dot" style={{ 
                                  width: '8px', height: '8px', borderRadius: '50%', 
-                                 background: (currentSlide % 5) === i ? '#fff' : 'rgba(255,255,255,0.5)',
-                                 transform: (currentSlide % 5) === i ? 'scale(1.2)' : 'scale(1)',
+                                 background: currentSlide === i ? '#fff' : 'rgba(255,255,255,0.5)',
+                                 transform: currentSlide === i ? 'scale(1.2)' : 'scale(1)',
                                  cursor: 'pointer'
                              }} onClick={() => setCurrentSlide(i)}></div>
                         ))}
@@ -291,29 +357,9 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
                     </ul>
                 </div>
                 
-                <button className="btn btn-primary" onClick={() => setScreen('name')}>
+                <button className="btn btn-primary" onClick={() => setScreen('search')}>
                     <i className="fas fa-play-circle"></i> {t.startBtn}
                 </button>
-            </div>
-        )}
-
-        {/* NAME SCREEN */}
-        {screen === 'name' && (
-            <div id="nameScreen" className="screen active">
-                <h2><i className="fas fa-user-circle"></i> {t.personalize.replace('👤 ', '')}</h2>
-                <p>{t.entername}</p>
-                <div className="form-group">
-                    <label><i className="fas fa-user"></i> {t.nameLabel}</label>
-                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Masukkan nama..." maxLength={30} />
-                </div>
-                <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginTop: '25px' }}>
-                    <button className="btn btn-secondary" onClick={() => setScreen('welcome')}>
-                        <i className="fas fa-arrow-left"></i> {t.backWelcome}
-                    </button>
-                    <button className="btn btn-primary" onClick={() => setScreen('search')}>
-                        {t.continue} <i className="fas fa-arrow-right"></i>
-                    </button>
-                </div>
             </div>
         )}
 
@@ -321,14 +367,17 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
         {screen === 'search' && (
             <div id="searchScreen" className="screen active">
                 <div className="search-header">
-                    <h2><i className="fas fa-search"></i> {t.explore.replace('🔎 ', '')}</h2>
-                    <div className="user-info">
-                        <span><i className="fas fa-user"></i> {name || "Guest"}</span>
-                    </div>
+                    <h2><i className="fas fa-search"></i> {t.explore}</h2>
                 </div>
 
                 <div className="search-box">
-                    <input type="text" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={t.searchPlace} />
+                    <input 
+                      type="text" 
+                      value={keyword} 
+                      onChange={(e) => setKeyword(e.target.value)} 
+                      onKeyUp={handleEnter}
+                      placeholder={t.searchPlace} 
+                    />
                     <button><i className="fas fa-search"></i> Cari</button>
                 </div>
 
@@ -392,8 +441,8 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
                      ))}
                 </div>
 
-                <button className="btn btn-secondary" onClick={() => setScreen('name')} style={{ marginBottom: '15px' }}>
-                    <i className="fas fa-user-edit"></i> {t.changeName}
+                <button className="btn btn-secondary" onClick={() => setScreen('welcome')} style={{ marginBottom: '15px' }}>
+                    <i className="fas fa-arrow-left"></i> {t.backWelcome}
                 </button>
 
                 <div id="results">
@@ -403,9 +452,10 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
                          </div>
                     ) : (
                         filteredData.data.map((item: any, index: number) => {
+                            const itemData = getItemData(item);
                             let imageUrl = item.img;
                             if (!imageUrl || !imageUrl.startsWith('http')) {
-                                imageUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=random&size=300`;
+                                imageUrl = 'https://placehold.co/300x200/4a63e7/white?text=No+Image';
                             }
                             
                             const isSmart = filteredData.activeRules.length > 0;
@@ -417,16 +467,16 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
                                     <h3>{item.name}</h3>
                                     <div style={{ height: '180px', overflow: 'hidden', borderRadius: '12px', marginBottom: '15px' }}>
                                         <img src={imageUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                                        onError={(e) => e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name)}&background=random&size=300`} />
+                                        onError={(e) => e.currentTarget.src = 'https://placehold.co/300x200/4a63e7/white?text=No+Image'} />
                                     </div>
-                                    <span className="tag">{item.typeLabel}</span>
-                                    <div className="info-row"><i className="fas fa-map-marker-alt" style={{ color: '#e91e63' }}></i><span>{item.location || 'Lombok'}</span></div>
-                                    <div className="info-row"><i className="fas fa-tag" style={{ color: '#4caf50' }}></i><span>{formatPrice(item.price)}</span></div>
+                                    <span className="tag">{itemData.typeLabel}</span>
+                                    <div className="info-row"><i className="fas fa-map-marker-alt" style={{ color: '#e91e63' }}></i><span>{itemData.location || 'Lombok'}</span></div>
+                                    <div className="info-row"><i className="fas fa-tag" style={{ color: '#4caf50' }}></i><span>{formatPrice(itemData.price)}</span></div>
                                     {item.rating && (
                                         <div className="info-row"><i className="fas fa-star" style={{ color: '#ffd700' }}></i><span>{renderStars(item.rating)} ({item.rating})</span></div>
                                     )}
                                     <p style={{ marginTop: '15px', fontSize: '0.9rem', color: '#666', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                        {item.desc || t.noDesc}
+                                        {itemData.desc || t.noDesc}
                                     </p>
                                     <button className="btn btn-secondary" style={{ marginTop: '15px', padding: '10px 20px', fontSize: '14px', width: '100%', color: '#333', borderColor: '#ccc' }}
                                         onClick={() => setModalItem(item)}>
@@ -446,13 +496,17 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
           <div className="modal-overlay active" onClick={() => setModalItem(null)}>
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                   <div className="modal-header">
-                      <img className="modal-image" src={modalItem.img || `https://ui-avatars.com/api/?name=${encodeURIComponent(modalItem.name)}`} alt="Dest"
-                          onError={(e) => e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(modalItem.name)}&background=4a63e7&color=fff&size=700`} />
+                      <img 
+                        className="modal-image" 
+                        src={modalItem.img || 'https://placehold.co/700x400/4a63e7/white?text=No+Image'} 
+                        alt="Destination"
+                        onError={(e) => e.currentTarget.src = 'https://placehold.co/700x400/4a63e7/white?text=No+Image'} 
+                      />
                       <button className="modal-close" onClick={() => setModalItem(null)}><i className="fas fa-times"></i></button>
                   </div>
                   <div className="modal-body">
                       <h2 className="modal-title">{modalItem.name}</h2>
-                      <div className="modal-type">{modalItem.typeLabel}</div>
+                      <div className="modal-type">{getItemData(modalItem).typeLabel}</div>
 
                       {modalItem.rating && (
                           <div className="modal-rating">
@@ -464,35 +518,35 @@ export default function ClientView({ initialData }: { initialData: any[] }) {
                       <div className="modal-info-grid">
                           <div className="modal-info-item">
                               <label><i className="fas fa-map-marker-alt"></i> <span>{t.modalLocation}</span></label>
-                              <p>{modalItem.location || 'Lombok, Indonesia'}</p>
+                              <p>{getItemData(modalItem).location || 'Lombok, Indonesia'}</p>
                           </div>
                           <div className="modal-info-item">
                               <label><i className="fas fa-clock"></i> <span>{t.modalHours}</span></label>
-                              <p>{modalItem.openingHours || t.noHours}</p>
+                              <p>{getItemData(modalItem).openingHours || t.noHours}</p>
                           </div>
                           <div className="modal-info-item">
                               <label><i className="fas fa-tag"></i> <span>{t.modalPrice}</span></label>
-                              <p>{formatPrice(modalItem.price)}</p>
+                              <p>{formatPrice(getItemData(modalItem).price)}</p>
                           </div>
                           <div className="modal-info-item">
                               <label><i className="fas fa-car"></i> <span>{t.modalTransport}</span></label>
-                              <p>{modalItem.transport || (lang === 'id' ? 'Kendaraan Pribadi' : 'Private Vehicle')}</p>
+                              <p>{translateTransport(modalItem.transport)}</p>
                           </div>
                       </div>
 
                       <div className="modal-section">
                           <h3 className="modal-section-title"><i className="fas fa-running"></i> <span>{t.modalActivities}</span></h3>
-                          <p>{modalItem.activity || t.noActivity}</p>
+                          <p>{getItemData(modalItem).activity || t.noActivity}</p>
                       </div>
 
                       <div className="modal-section">
                           <h3 className="modal-section-title"><i className="fas fa-info-circle"></i> <span>{t.modalDesc}</span></h3>
-                          <p>{modalItem.desc || t.noDesc}</p>
+                          <p>{getItemData(modalItem).desc || t.noDesc}</p>
                       </div>
 
                       <div className="modal-section">
                           <h3 className="modal-section-title"><i className="fas fa-concierge-bell"></i> <span>{t.modalFacilities}</span></h3>
-                          <p>{modalItem.facility || t.noFacility}</p>
+                          <p>{getItemData(modalItem).facility || t.noFacility}</p>
                       </div>
                   </div>
               </div>
