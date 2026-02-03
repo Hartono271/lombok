@@ -14,6 +14,8 @@ export async function getDestinations() {
     PREFIX to: <http://www.semanticweb.org/harto/ontologies/2025/3/protegetesis#>
 
     SELECT ?name ?typeURI 
+      (SAMPLE(?nameLabelEn) as ?nameEn)
+      (SAMPLE(?nameLabelId) as ?nameId)
       (SAMPLE(?typeLabelEn) as ?labelEn) 
       (SAMPLE(?typeLabelId) as ?labelId) 
       (SAMPLE(?desc) as ?description) 
@@ -33,13 +35,19 @@ export async function getDestinations() {
       (SAMPLE(?openHours) as ?openingHoursVal)
       (SAMPLE(?openHoursEn) as ?openingHoursValEn)
       (SAMPLE(?openHoursId) as ?openingHoursValId)
+      (SAMPLE(?video) as ?videoUrl)
+      (SAMPLE(?eventTime) as ?timeEventsVal)
       (GROUP_CONCAT(DISTINCT ?locNameEn; separator=", ") as ?locationsEn) 
       (GROUP_CONCAT(DISTINCT ?locNameId; separator=", ") as ?locationsId) 
+      (GROUP_CONCAT(DISTINCT ?locTypeURI; separator=", ") as ?locationURIs)
       (GROUP_CONCAT(DISTINCT ?transName; separator=", ") as ?transports)
     WHERE {
       ?s to:TourismName ?name .
       ?s rdf:type ?typeURI .
       FILTER(?typeURI != owl:NamedIndividual)
+      
+      OPTIONAL { ?s rdfs:label ?nameLabelEn . FILTER(lang(?nameLabelEn) = "en" || lang(?nameLabelEn) = "") }
+      OPTIONAL { ?s rdfs:label ?nameLabelId . FILTER(lang(?nameLabelId) = "id") }
       
       OPTIONAL { ?typeURI rdfs:label ?typeLabelEn . FILTER(lang(?typeLabelEn) = "en" || lang(?typeLabelEn) = "") }
       OPTIONAL { ?typeURI rdfs:label ?typeLabelId . FILTER(lang(?typeLabelId) = "id") }
@@ -74,12 +82,16 @@ export async function getDestinations() {
         OPTIONAL { ?locType rdfs:label ?locLabelId . FILTER(lang(?locLabelId) = "id") }
         BIND(COALESCE(?locLabelEn, STRAFTER(STR(?locType), "#")) as ?locNameEn)
         BIND(COALESCE(?locLabelId, STRAFTER(STR(?locType), "#")) as ?locNameId)
+        BIND(STRAFTER(STR(?locType), "#") as ?locTypeURI)
       }
 
       OPTIONAL {
         ?trans to:used_to_reach ?s .
         BIND(STRAFTER(STR(?trans), "#") as ?transName)
       }
+
+      OPTIONAL { ?s to:Video ?video . }
+      OPTIONAL { ?s to:TimeEvents ?eventTime . }
     }
     GROUP BY ?name ?typeURI
     LIMIT 300
@@ -102,8 +114,10 @@ export async function getDestinations() {
 
     const data = await response.json();
 
-    return data.results.bindings.map((b: any) => ({
+    const mainData = data.results.bindings.map((b: any) => ({
       name: b.name.value,
+      nameEn: b.nameEn ? b.nameEn.value : b.name.value,
+      nameId: b.nameId ? b.nameId.value : (b.nameEn ? b.nameEn.value : b.name.value),
       typeURI: b.typeURI.value,
       // Data dalam bahasa Inggris
       typeLabelEn: b.labelEn ? b.labelEn.value : extractTypeName(b.typeURI.value),
@@ -124,8 +138,16 @@ export async function getDestinations() {
       // Data umum
       img: b.image ? b.image.value : "",
       rating: b.ratingVal ? b.ratingVal.value : "",
-      transport: b.transports ? b.transports.value : ""
+      transport: b.transports ? b.transports.value : "",
+      video: b.videoUrl ? b.videoUrl.value : "",
+      timeEvents: b.timeEventsVal ? b.timeEventsVal.value : "",
+      locationURI: b.locationURIs ? b.locationURIs.value : ""
     }));
+
+    // Fetch Events data separately (they use rdfs:label instead of TourismName)
+    const eventsData = await fetchEventsData(endpoint);
+    
+    return [...mainData, ...eventsData];
 
   } catch (error) {
     console.error("Error fetching data:", error);
@@ -136,4 +158,70 @@ export async function getDestinations() {
 function extractTypeName(uri: string) {
   const match = uri.match(/#([^#]+)$/);
   return match ? match[1].replace(/([A-Z])/g, ' $1').trim() : "Destination";
+}
+
+async function fetchEventsData(endpoint: string) {
+  const eventsQuery = `
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX owl: <http://www.w3.org/2002/07/owl#>
+    PREFIX to: <http://www.semanticweb.org/harto/ontologies/2025/3/protegetesis#>
+
+    SELECT ?eventNameEn ?eventNameId ?desc ?descEn ?descId ?img ?time ?video
+    WHERE {
+      ?s rdf:type to:Events .
+      OPTIONAL { ?s rdfs:label ?eventNameEn . FILTER(lang(?eventNameEn) = "en" || lang(?eventNameEn) = "") }
+      OPTIONAL { ?s rdfs:label ?eventNameId . FILTER(lang(?eventNameId) = "id") }
+      OPTIONAL { ?s to:Description ?desc }
+      OPTIONAL { ?s to:meaningdescription ?descEn . FILTER(lang(?descEn) = "en") }
+      OPTIONAL { ?s to:meaningdescription ?descId . FILTER(lang(?descId) = "id") }
+      OPTIONAL { ?s to:Images ?img }
+      OPTIONAL { ?s to:TimeEvents ?time }
+      OPTIONAL { ?s to:Video ?video }
+    }
+  `;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/sparql-query',
+        'Accept': 'application/sparql-results+json'
+      },
+      body: eventsQuery,
+      cache: 'no-store'
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch events");
+      return [];
+    }
+
+    const data = await response.json();
+
+    return data.results.bindings.map((b: any) => ({
+      name: b.eventNameEn ? b.eventNameEn.value : (b.eventNameId ? b.eventNameId.value : "Event"),
+      nameEn: b.eventNameEn ? b.eventNameEn.value : (b.eventNameId ? b.eventNameId.value : "Event"),
+      nameId: b.eventNameId ? b.eventNameId.value : (b.eventNameEn ? b.eventNameEn.value : "Acara"),
+      typeURI: "http://www.semanticweb.org/harto/ontologies/2025/3/protegetesis#Events",
+      typeLabelEn: "Events",
+      typeLabelId: "Acara",
+      descEn: b.descEn ? b.descEn.value : (b.desc ? b.desc.value : ""),
+      descId: b.descId ? b.descId.value : (b.descEn ? b.descEn.value : (b.desc ? b.desc.value : "")),
+      activityEn: "", activityId: "",
+      facilityEn: "", facilityId: "",
+      priceEn: "", priceId: "",
+      openingHoursEn: "", openingHoursId: "",
+      locationEn: "Lombok", locationId: "Lombok",
+      locationURI: "",
+      img: b.img ? b.img.value : "",
+      rating: "",
+      transport: "",
+      video: b.video ? b.video.value : "",
+      timeEvents: b.time ? b.time.value : ""
+    }));
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    return [];
+  }
 }
